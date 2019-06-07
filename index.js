@@ -43,13 +43,15 @@ J2M.prototype.to_markdown = function(str) {
         // Subscript
         .replace(/~([^~]*)~/g, '<sub>$1</sub>')
         // Strikethrough
-        .replace(/\s+-(\S+.*?\S)-\s+/g, ' ~~$1~~ ')
+        .replace(/(\s+)-(\S+.*?\S)-(\s+)/g, '$1~~$2~~$3')
         // Code Block
         .replace(/\{code(:([a-z]+))?([:|]?(title|borderStyle|borderColor|borderWidth|bgColor|titleBGColor)=.+?)*\}([^]*)\{code\}/gm, '```$2$5```')
         // Pre-formatted text
         .replace(/{noformat}/g, '```')
         // Un-named Links
         .replace(/\[([^|]+)\]/g, '<$1>')
+        // Images
+        .replace(/!(.+)!/g, '![]($1)')
         // Named Links
         .replace(/\[(.+?)\|(.+)\]/g, '[$1]($2)')
         // Single Paragraph Blockquote
@@ -78,6 +80,24 @@ J2M.prototype.to_jira = function(str) {
     };
 
     return str
+        // tables
+        .replace(/^\n((?:\|.*?)+\|)[ \t]*\n((?:\|\s*?\-{3,}\s*?)+\|)[ \t]*\n((?:(?:\|.*?)+\|[ \t]*\n)*)$/gm,
+        function (match, headerLine, separatorLine, rowstr) {
+            var headers = headerLine.match(/[^|]+(?=\|)/g);
+            var separators = separatorLine.match(/[^|]+(?=\|)/g);
+            if (headers.length !== separators.length) {
+                return match;
+            }
+            var rows = rowstr.split('\n');
+            if (rows.length === 1 + 1 && headers.length === 1) {
+                // panel
+                return '{panel:title=' + headers[0].trim() + '}\n' +
+                    rowstr.replace(/^\|(.*)[ \t]*\|/, '$1').trim() +
+                    '\n{panel}\n';
+            } else {
+                return '||' + headers.join('||') + '||\n' + rowstr;
+            }
+        })
         // Bold, Italic, and Combined (bold+italic)
         .replace(/([*_]+)(\S.*?)\1/g, function (match,wrapper,content) {
             switch (wrapper.length) {
@@ -110,39 +130,26 @@ J2M.prototype.to_jira = function(str) {
             return to + content + to;
         })
         // Other kind of strikethrough
-        .replace(/\s+~~(.*?)~~\s+/g, ' -$1- ')
+        .replace(/(\s+)~~(.*?)~~(\s+)/g, '$1-$2-$3')
         // Named/Un-Named Code Block
-        .replace(/`{3,}(\w+)?((?:\n|[^`])+)`{3,}/g, function(match, synt, content) {
-            var code = '{code';
-            if (synt) code += ':' + synt;
-            return code + '}' + content + '{code}';
+        .replace(/```(.+\n)?((?:.|\n)*?)```/g, function(match, synt, content) {
+            var code = '{code}';
+            if (synt) {
+                code = '{code:' + synt.replace(/\n/g, '') + "}\n";
+            }
+            return code + content + '{code}';
         })
         // Inline-Preformatted Text
         .replace(/`([^`]+)`/g, '{{$1}}')
+        // Images
+        .replace(/!\[[^\]]*\]\(([^)]+)\)/g, '!$1!')
         // Named Link
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '[$1|$2]')
         // Un-Named Link
         .replace(/<([^>]+)>/g, '[$1]')
         // Single Paragraph Blockquote
-        .replace(/^>/gm, 'bq.')
-        // tables
-        .replace(/^\n((?:\|.*?)+\|)[ \t]*\n((?:\|\s*?\-{3,}\s*?)+\|)[ \t]*\n((?:(?:\|.*?)+\|[ \t]*\n)*)$/gm,
-                 function (match, headerLine, separatorLine, rowstr) {
-                     var headers = headerLine.match(/[^|]+(?=\|)/g);
-                     var separators = separatorLine.match(/[^|]+(?=\|)/g);
-                     if (headers.length !== separators.length) {
-                         return match;
-                     }
-                     var rows = rowstr.split('\n');
-                     if (rows.length === 1 + 1 && headers.length === 1) {
-                         // panel
-                         return '{panel:title=' + headers[0].trim() + '}\n' +
-                             rowstr.replace(/^\|(.*)[ \t]*\|/, '$1').trim() +
-                             '\n{panel}\n';
-                     } else {
-                         return '||' + headers.join('||') + '||\n' + rowstr;
-                     }
-                 });
+        .replace(/^>/gm, 'bq.');
+        
 
 };
 
