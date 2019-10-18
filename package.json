@@ -21,6 +21,9 @@
   "scripts": {
     "test": "mocha --timeout 5000 --check-leaks --reporter spec test/"
   },
+  "bin": {
+    "j2m": "bin/j2m.js"
+  },
   "author": "Fokke Zandbergen <mail@fokkezb.nl>",
   "contributors": [
     "Kyle Farris <kyle@chomponllc.com>",
@@ -28,6 +31,8 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
+    "colors": "^1.1.2",
+    "minimist": "^1.2.0",
     "marked": "^0.6.2"
   }
 }
