@@ -77,3 +77,26 @@ var html = j2m.md_to_html(md);
 // If converting from JIRA Wiki Syntax to HTML:
 var html = j2m.jira_to_html(jira);
 ```
+
+## CLI
+J2M is also available as a command line utility.
+
+### Usage
+```
+$ j2m [--toM|--toJ] [--stdin] $filename
+
+Options:
+--toM, -m:    Treat input as jira text and convert it to Markdown
+--toJ, -j:    Treat input as markdown text and convert it to Jira
+--stdin:      Read input from stdin. In this case the give filename is ignored
+```
+
+#### Usage Example
+```bash
+# convert notes to jira markup and copy it to the clipboard (mac)
+j2m --toJ notes.md | pbcopy
+
+# retrieve some file in jira markup and save it as markdown
+curl http://someserver.com/jira.txt | j2m --toM --stdin > notee.md
+```
+
